@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, AsyncIterator
 from fastmcp import FastMCP
 
@@ -284,20 +284,23 @@ def register_expense_tools(mcp: FastMCP) -> None:
                 "description": description,
                 "currency_code": currency_code,
                 "group_id": group_id,
-                "split_equally": split_equally
             }
-            
+
+            # Auto-detect: custom splits override split_equally
+            if users:
+                expense_data["split_equally"] = False
+                expense_data["users"] = users
+            elif split_equally:
+                expense_data["split_equally"] = True
+
             # Add optional parameters
             if date:
                 expense_data["date"] = date
             else:
-                expense_data["date"] = datetime.utcnow().isoformat() + "Z"
-            
+                expense_data["date"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
             if category_id is not None:
                 expense_data["category_id"] = category_id
-            
-            if users:
-                expense_data["users"] = users
             
             result = await client.create_expense(expense_data)
             logger.info(f"Created expense: {description} (${cost})")
