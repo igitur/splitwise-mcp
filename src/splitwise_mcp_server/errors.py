@@ -269,11 +269,21 @@ def validate_user_split(users: List[Dict[str, Any]]) -> None:
                 details={"validation": "format", "index": i}
             )
         
-        if "user_id" not in user:
+        has_user_id = "user_id" in user
+        has_email_ident = all(k in user for k in ("email", "first_name", "last_name"))
+
+        if not has_user_id and not has_email_ident:
             raise ValidationError(
-                f"users[{i}] must include user_id",
+                f"users[{i}] must include user_id or (email, first_name, and last_name)",
                 field="users",
-                details={"validation": "required_field", "index": i, "missing_field": "user_id"}
+                details={"validation": "required_field", "index": i},
+            )
+
+        if "email" in user and not has_email_ident:
+            raise ValidationError(
+                f"users[{i}] with email must also include first_name and last_name",
+                field="users",
+                details={"validation": "required_field", "index": i},
             )
         
         # Validate paid_share and owed_share if provided
