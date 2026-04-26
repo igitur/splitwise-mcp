@@ -114,8 +114,8 @@ def create_server() -> FastMCP:
     register_friend_tools(mcp)
     register_resolution_tools(mcp)
     register_comment_tools(mcp)
+    register_notification_tools(mcp)
     register_utility_tools(mcp)
-    register_arithmetic_tools(mcp)
     
     logger.info("All tools registered successfully")
     
@@ -479,6 +479,17 @@ def register_expense_tools(mcp: FastMCP) -> None:
             logger.error(f"Error deleting expense {expense_id}: {e}")
             raise
 
+    @mcp.tool()
+    async def restore_expense(expense_id: int) -> Dict[str, Any]:
+        """Restore a previously deleted expense. Use this to undo an accidental deletion."""
+        try:
+            result = await client.restore_expense(expense_id)
+            logger.info(f"Restored expense {expense_id}")
+            return result
+        except Exception as e:
+            logger.error(f"Error restoring expense {expense_id}: {e}")
+            raise
+
 
 # ============================================================================
 # Group Tools
@@ -810,6 +821,34 @@ def register_friend_tools(mcp: FastMCP) -> None:
             logger.error(f"Error getting friend {user_id}: {e}")
             raise
 
+    @mcp.tool()
+    async def create_friend(user_email: str, user_first_name: str = "", user_last_name: str = "") -> Dict[str, Any]:
+        """Add a friend by email address. Optionally provide their first and last name."""
+        try:
+            validate_required(user_email, "user_email")
+            validate_email(user_email)
+            result = await client.create_friend(user_email, user_first_name, user_last_name)
+            resolver.clear_cache()
+            logger.info(f"Created friend: {user_email}")
+            return result
+        except (ValidationError, RateLimitError):
+            raise
+        except Exception as e:
+            logger.error(f"Error creating friend: {e}")
+            raise
+
+    @mcp.tool()
+    async def delete_friend(friend_id: int) -> Dict[str, Any]:
+        """Remove a friendship. Does not affect shared expenses or balances."""
+        try:
+            result = await client.delete_friend(friend_id)
+            resolver.clear_cache()
+            logger.info(f"Deleted friend {friend_id}")
+            return result
+        except Exception as e:
+            logger.error(f"Error deleting friend {friend_id}: {e}")
+            raise
+
 
 # ============================================================================
 # Resolution Tools
@@ -1063,6 +1102,25 @@ def register_comment_tools(mcp: FastMCP) -> None:
             return result
         except Exception as e:
             logger.error(f"Error deleting comment {comment_id}: {e}")
+            raise
+
+
+# ============================================================================
+# Notification Tools
+# ============================================================================
+
+def register_notification_tools(mcp: FastMCP) -> None:
+    """Register notification-related MCP tools."""
+
+    @mcp.tool()
+    async def get_notifications() -> Dict[str, Any]:
+        """Get recent notifications for the current user (new expenses, payments, comments, group activity)."""
+        try:
+            result = await client.get_notifications()
+            logger.info("Retrieved notifications")
+            return result
+        except Exception as e:
+            logger.error(f"Error getting notifications: {e}")
             raise
 
 

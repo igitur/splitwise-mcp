@@ -502,6 +502,10 @@ class SplitwiseClient:
         """
         return await self.post(f"/delete_expense/{expense_id}")
 
+    async def restore_expense(self, expense_id: int) -> Dict[str, Any]:
+        """Restore a previously deleted expense."""
+        return await self.post(f"/restore_expense/{expense_id}")
+
     # Group endpoints
     
     async def get_groups(self) -> Dict[str, Any]:
@@ -650,6 +654,25 @@ class SplitwiseClient:
             Exception: If request fails or friend not found
         """
         return await self.get(f"/get_friend/{user_id}")
+
+    async def create_friend(self, user_email: str, user_first_name: str = "", user_last_name: str = "") -> Dict[str, Any]:
+        """Add a friend by email address."""
+        data = {"user_email": user_email}
+        if user_first_name:
+            data["user_first_name"] = user_first_name
+        if user_last_name:
+            data["user_last_name"] = user_last_name
+        return await self.post("/create_friend", data=data)
+
+    async def delete_friend(self, friend_id: int) -> Dict[str, Any]:
+        """Remove a friendship."""
+        return await self.post(f"/delete_friend/{friend_id}")
+
+    # Notification endpoints
+
+    async def get_notifications(self) -> Dict[str, Any]:
+        """Get notifications for the current user."""
+        return await self.get("/get_notifications")
 
     # Comment endpoints
     
